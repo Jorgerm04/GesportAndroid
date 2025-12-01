@@ -1,8 +1,10 @@
 package com.example.gesport.data
 
 import com.example.gesport.models.User
+import com.example.gesport.repository.UserRepository
 
-object LoginRepository {
+// 👇 ahora es singleton
+object DataUserRepository : UserRepository {
 
     private val users = mutableListOf(
         User(
@@ -147,6 +149,40 @@ object LoginRepository {
         )
     )
 
-    fun obtenerUsuarios(): List<User> = users
+    private fun getNewId(): Int {
+        return (users.maxOfOrNull { it.id } ?: 0) + 1
+    }
 
+    override suspend fun addUser(user: User): User {
+        val newId = getNewId()
+        val newUser = user.copy(id = newId)
+        users.add(newUser)
+        return newUser
+    }
+
+    override suspend fun getUserById(id: Int): User? {
+        return users.find { it.id == id }
+    }
+
+    override suspend fun updateUser(user: User): Boolean {
+        val index = users.indexOfFirst { it.id == user.id }
+        return if (index != -1) {
+            users[index] = user
+            true
+        } else {
+            false
+        }
+    }
+
+    override suspend fun deleteUser(id: Int): Boolean {
+        return users.removeIf { it.id == id }
+    }
+
+    override suspend fun getAllUsers(): List<User> {
+        // 👇 devolvemos SIEMPRE una nueva lista
+        return users.toList()
+    }
+
+    override suspend fun getUsersByRole(rol: String): List<User> =
+        users.filter { it.rol == rol }.toList() // 👈 también copia
 }

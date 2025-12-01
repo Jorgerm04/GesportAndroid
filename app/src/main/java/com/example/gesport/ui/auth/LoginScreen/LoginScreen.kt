@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package com.example.gesport.ui
+package com.example.gesport.ui.auth.LoginScreen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,20 +30,45 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.ges_sports.domain.LogicLogin
 import com.example.gesport.R
+import com.example.gesport.ui.auth.LoginScreen.LoginViewModel
 
 @Composable
 fun LoginScreen(
-    navController: NavHostController
+    navController: NavHostController,
+    vm: LoginViewModel = viewModel()
 ) {
-    val logic = remember { LogicLogin() }
-    var email by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
-    var showPassword by rememberSaveable { mutableStateOf(false) }
-    var error by rememberSaveable { mutableStateOf("") }
+    val email by vm.email.observeAsState("")
+    val password by vm.password.observeAsState("")
+    val showPassword by vm.showPassword.observeAsState(false)
+    val error by vm.error.observeAsState("")
+
+    val navigateToHome by vm.navigateToHome.observeAsState(null)
+    val navigateToDashboard by vm.navigateToDashboard.observeAsState(null)
+
+    // 👉 Navegar a HOME si no es ADMIN_DEPORTIVO
+    LaunchedEffect(navigateToHome) {
+        navigateToHome?.let { userName ->
+            navController.navigate("home/$userName") {
+                popUpTo("login") { inclusive = true }
+            }
+            vm.onNavigationDone()
+        }
+    }
+
+    // 👉 Navegar a DASHBOARD si es ADMIN_DEPORTIVO
+    LaunchedEffect(navigateToDashboard) {
+        navigateToDashboard?.let { userName ->
+            navController.navigate("dashboard/$userName") {
+                popUpTo("login") { inclusive = true }
+            }
+            vm.onNavigationDone()
+        }
+    }
 
     val bg = Brush.verticalGradient(
         colors = listOf(Color(0xFF0B0E12), Color(0xFF12171E))
@@ -97,7 +123,7 @@ fun LoginScreen(
 
             TextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = { vm.setEmail(it) },
                 placeholder = { Text("Email o usuario") },
                 leadingIcon = { Icon(Icons.Default.AlternateEmail, contentDescription = null) },
                 singleLine = true,
@@ -131,11 +157,11 @@ fun LoginScreen(
 
             TextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = { vm.setPassword(it) },
                 placeholder = { Text("Contraseña") },
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 trailingIcon = {
-                    IconButton(onClick = { showPassword = !showPassword }) {
+                    IconButton(onClick = { vm.toggleShowPassword() }) {
                         Icon(
                             if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                             contentDescription = if (showPassword) "Ocultar" else "Mostrar"
@@ -186,22 +212,14 @@ fun LoginScreen(
 
             val gradient = Brush.horizontalGradient(
                 colors = listOf(
-                    Color(0xFF0B2843), // 0% - Azul muy oscuro
-                    Color(0xFF135B90), // 50% - Azul medio
-                    Color(0xFF0B2843)  // 100% - Azul muy oscuro
+                    Color(0xFF0B2843),
+                    Color(0xFF135B90),
+                    Color(0xFF0B2843)
                 )
             )
 
             Button(
-                onClick = {
-                    try {
-                        val user = logic.comprobarLogin(email, password)
-                        navController.navigate("home/${user.nombre}")
-                    } catch (e: IllegalArgumentException) {
-                        val errorMessage = e.message
-                        error = errorMessage ?: "Error en el inicio de sesión"
-                    }
-                },
+                onClick = { vm.login() },
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()

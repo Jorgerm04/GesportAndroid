@@ -1,4 +1,4 @@
-package com.example.gesport.ui.components
+package com.example.gesport.ui.front.HomeScreen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
