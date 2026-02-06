@@ -1,0 +1,142 @@
+[
+  {
+    "id": 1,
+    "nombre": "Juan Pérez",
+    "email": "ana@gmail.com",
+    "password": "1234",
+    "rol": "ADMIN_DEPORTIVO"
+  },
+  {
+    "id": 2,
+    "nombre": "Pedro Caselles",
+    "email": "pedro2@gmail.com",
+    "password": "1234",
+    "rol": "ENTRENADOR"
+  },
+  {
+    "id": 3,
+    "nombre": "Pepa Ferrández",
+    "email": "pepa3@gmail.com",
+    "password": "1234",
+    "rol": "JUGADOR"
+  },
+  {
+    "id": 4,
+    "nombre": "Pablo Teruel",
+    "email": "pablo4@gmail.com",
+    "password": "1234",
+    "rol": "ARBITRO"
+  },
+  {
+    "id": 5,
+    "nombre": "María Belmonte",
+    "email": "maria5@gmail.com",
+    "password": "1234",
+    "rol": "JUGADOR"
+  },
+  {
+    "id": 6,
+    "nombre": "Juan López",
+    "email": "juan6@gmail.com",
+    "password": "1234",
+    "rol": "ENTRENADOR"
+  },
+  {
+    "id": 7,
+    "nombre": "Lucía Sánchez",
+    "email": "lucia7@gmail.com",
+    "password": "1234",
+    "rol": "JUGADOR"
+  },
+  {
+    "id": 8,
+    "nombre": "Carlos Martínez",
+    "email": "carlos8@gmail.com",
+    "password": "1234",
+    "rol": "ARBITRO"
+  },
+  {
+    "id": 9,
+    "nombre": "Laura Gómez",
+    "email": "laura9@gmail.com",
+    "password": "1234",
+    "rol": "JUGADOR"
+  },
+  {
+    "id": 10,
+    "nombre": "Sergio Fernández",
+    "email": "sergio10@gmail.com",
+    "password": "1234",
+    "rol": "ENTRENADOR"
+  },
+  {
+    "id": 11,
+    "nombre": "Elena Costa",
+    "email": "elena11@gmail.com",
+    "password": "1234",
+    "rol": "JUGADOR"
+  },
+  {
+    "id": 12,
+    "nombre": "David Ruiz",
+    "email": "david12@gmail.com",
+    "password": "1234",
+    "rol": "ARBITRO"
+  },
+  {
+    "id": 13,
+    "nombre": "Patricia Navarro",
+    "email": "patricia13@gmail.com",
+    "password": "1234",
+    "rol": "JUGADOR"
+  },
+  {
+    "id": 14,
+    "nombre": "Javier Ortega",
+    "email": "javier14@gmail.com",
+    "password": "1234",
+    "rol": "ENTRENADOR"
+  },
+  {
+    "id": 15,
+    "nombre": "Cristina Romero",
+    "email": "cristina15@gmail.com",
+    "password": "1234",
+    "rol": "JUGADOR"
+  },
+  {
+    "id": 16,
+    "nombre": "Miguel Herrera",
+    "email": "miguel16@gmail.com",
+    "password": "1234",
+    "rol": "ADMIN_DEPORTIVO"
+  },
+  {
+    "id": 17,
+    "nombre": "Sara Molina",
+    "email": "sara17@gmail.com",
+    "password": "1234",
+    "rol": "JUGADOR"
+  },
+  {
+    "id": 18,
+    "nombre": "Álvaro Domínguez",
+    "email": "alvaro18@gmail.com",
+    "password": "1234",
+    "rol": "ARBITRO"
+  },
+  {
+    "id": 19,
+    "nombre": "Noelia Pérez",
+    "email": "noelia19@gmail.com",
+    "password": "1234",
+    "rol": "JUGADOR"
+  },
+  {
+    "id": 20,
+    "nombre": "Hugo Vidal",
+    "email": "hugo20@gmail.com",
+    "password": "1234",
+    "rol": "ENTRENADOR"
+  }
+]

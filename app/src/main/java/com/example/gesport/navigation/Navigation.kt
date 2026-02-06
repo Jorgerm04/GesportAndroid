@@ -45,16 +45,14 @@ fun Navigation() {
             GesUserScreen(navController)
         }
 
-        // Form crear usuario
         composable("formuser") {
             FormUserScreen(navController)
         }
 
-        // Form editar usuario
         composable(
             "formuser/{userId}",
             arguments = listOf(
-                navArgument("userId") { type = NavType.IntType }   // 👈 IntType
+                navArgument("userId") { type = NavType.IntType }
             )
         ) { backStackEntry ->
             val userId = backStackEntry.arguments?.getInt("userId")

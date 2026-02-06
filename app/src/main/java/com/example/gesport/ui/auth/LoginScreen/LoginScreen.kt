@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -40,8 +41,11 @@ import com.example.gesport.ui.auth.LoginScreen.LoginViewModel
 @Composable
 fun LoginScreen(
     navController: NavHostController,
-    vm: LoginViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val vm: LoginViewModel = viewModel(
+        factory = LoginViewModelFactory(context)
+    )
     val email by vm.email.observeAsState("")
     val password by vm.password.observeAsState("")
     val showPassword by vm.showPassword.observeAsState(false)
@@ -50,7 +54,6 @@ fun LoginScreen(
     val navigateToHome by vm.navigateToHome.observeAsState(null)
     val navigateToDashboard by vm.navigateToDashboard.observeAsState(null)
 
-    // 👉 Navegar a HOME si no es ADMIN_DEPORTIVO
     LaunchedEffect(navigateToHome) {
         navigateToHome?.let { userName ->
             navController.navigate("home/$userName") {
@@ -60,7 +63,6 @@ fun LoginScreen(
         }
     }
 
-    // 👉 Navegar a DASHBOARD si es ADMIN_DEPORTIVO
     LaunchedEffect(navigateToDashboard) {
         navigateToDashboard?.let { userName ->
             navController.navigate("dashboard/$userName") {

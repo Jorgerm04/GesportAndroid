@@ -67,7 +67,7 @@ fun DashboardScreen(
             .background(bg)
             .padding(horizontal = 24.dp)
     ) {
-        // Cabecera
+
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -96,7 +96,6 @@ fun DashboardScreen(
             )
         }
 
-        // Grid central de cards
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -114,7 +113,6 @@ fun DashboardScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // 1ª fila: Equipos - Usuarios
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -123,7 +121,6 @@ fun DashboardScreen(
                     title = "Equipos",
                     icon = Icons.Default.People,
                     modifier = Modifier.weight(1f)
-                    // de momento sin navegación
                 )
 
                 DashboardItemCard(
@@ -138,7 +135,6 @@ fun DashboardScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            // 2ª fila: Pistas - Reservas
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -147,14 +143,12 @@ fun DashboardScreen(
                     title = "Pistas",
                     icon = Icons.Default.Place,
                     modifier = Modifier.weight(1f)
-                    // de momento sin navegación
                 )
 
                 DashboardItemCard(
                     title = "Reservas",
                     icon = Icons.Default.Event,
                     modifier = Modifier.weight(1f)
-                    // de momento sin navegación
                 )
             }
         }

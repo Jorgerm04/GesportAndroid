@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,7 +56,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.gesport.data.DataUserRepository
+
 import com.example.gesport.models.User
 import com.example.gesport.models.UserRoles
 
@@ -65,19 +66,10 @@ import com.example.gesport.models.UserRoles
 fun GesUserScreen(
     navController: NavHostController
 ) {
+    val context = LocalContext.current
     val viewModel: GesUserViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val repo = DataUserRepository
-                return GesUserViewModel(repo) as T
-            }
-        }
+        factory = GesUserViewModelFactory(context) // Usa la factory que ya tienes definida
     )
-
-    LaunchedEffect(Unit) {
-        viewModel.loadUsers()
-    }
 
     val users = viewModel.users
     val selectedRole = viewModel.selectedRole
@@ -131,7 +123,6 @@ fun GesUserScreen(
                     .padding(innerPadding)
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
-                // 🔍 Buscador por nombre / email
                 TextField(
                     value = searchQuery,
                     onValueChange = { viewModel.onSearchQueryChange(it) },
@@ -162,7 +153,6 @@ fun GesUserScreen(
                     )
                 )
 
-                // Filtros por rol
                 Text(
                     text = "Filtrar por rol",
                     color = Color(0xCCFFFFFF),

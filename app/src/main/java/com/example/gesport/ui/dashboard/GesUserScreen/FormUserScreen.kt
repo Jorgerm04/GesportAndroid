@@ -28,47 +28,43 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.gesport.data.DataUserRepository
+import com.example.gesport.data.RoomUserRepository
 import com.example.gesport.models.UserRoles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormUserScreen(
     navController: NavHostController,
-    userId: Int? = null        // 👈 ahora Int?
+    userId: Int? = null
 ) {
+
+    val context = LocalContext.current
     val viewModel: GesUserViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val repo = DataUserRepository
-                return GesUserViewModel(repo) as T
-            }
-        }
+        factory = GesUserViewModelFactory(context) // ¡Igual aquí!
     )
 
     val currentUser by viewModel.currentUser.observeAsState()
     val saveCompleted by viewModel.saveCompleted.observeAsState(false)
 
-    // Cargar datos si venimos a EDITAR
     LaunchedEffect(userId) {
         if (userId != null) {
             viewModel.loadUserById(userId)
         }
     }
 
-    // Volver atrás cuando se complete el guardado
     LaunchedEffect(saveCompleted) {
         if (saveCompleted) {
             navController.popBackStack()
@@ -76,11 +72,10 @@ fun FormUserScreen(
         }
     }
 
-    // Estados de los campos, se rellenan si currentUser tiene valor
-    var nombre by remember(currentUser) { mutableStateOf(currentUser?.nombre ?: "") }
-    var email by remember(currentUser) { mutableStateOf(currentUser?.email ?: "") }
-    var password by remember(currentUser) { mutableStateOf(currentUser?.password ?: "") }
-    var rol by remember(currentUser) { mutableStateOf(currentUser?.rol ?: "JUGADOR") }
+    var nombre by rememberSaveable (currentUser) { mutableStateOf(currentUser?.nombre ?: "") }
+    var email by rememberSaveable(currentUser) { mutableStateOf(currentUser?.email ?: "") }
+    var password by rememberSaveable(currentUser) { mutableStateOf(currentUser?.password ?: "") }
+    var rol by rememberSaveable(currentUser) { mutableStateOf(currentUser?.rol ?: "JUGADOR") }
 
     val bg = Brush.verticalGradient(
         colors = listOf(Color(0xFF0B0E12), Color(0xFF12171E))
@@ -119,7 +114,6 @@ fun FormUserScreen(
             ) {
                 Spacer(Modifier.height(8.dp))
 
-                // Nombre
                 TextField(
                     value = nombre,
                     onValueChange = { nombre = it },
@@ -131,7 +125,6 @@ fun FormUserScreen(
 
                 Spacer(Modifier.height(12.dp))
 
-                // Email
                 TextField(
                     value = email,
                     onValueChange = { email = it },
@@ -143,7 +136,6 @@ fun FormUserScreen(
 
                 Spacer(Modifier.height(12.dp))
 
-                // Password
                 TextField(
                     value = password,
                     onValueChange = { password = it },
@@ -155,7 +147,6 @@ fun FormUserScreen(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Rol
                 Text(
                     text = "Rol",
                     color = Color(0xCCFFFFFF),
@@ -225,7 +216,6 @@ fun FormUserScreen(
     }
 }
 
-// helper para no repetir colores
 @Composable
 private fun textFieldColorsLikeLogin() = TextFieldDefaults.colors(
     focusedContainerColor = Color.Transparent,

@@ -6,11 +6,9 @@ import androidx.lifecycle.ViewModel
 
 class DashboardViewModel : ViewModel() {
 
-    // Por si en el futuro quieres mostrar el nombre del usuario en el dashboard
     private val _userName = MutableLiveData("")
     val userName: LiveData<String> = _userName
 
-    // Evento de navegación hacia GesUserScreen
     private val _navigateToGesUser = MutableLiveData(false)
     val navigateToGesUser: LiveData<Boolean> = _navigateToGesUser
 

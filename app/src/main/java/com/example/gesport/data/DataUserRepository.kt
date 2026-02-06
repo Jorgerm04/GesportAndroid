@@ -2,8 +2,7 @@ package com.example.gesport.data
 
 import com.example.gesport.models.User
 import com.example.gesport.repository.UserRepository
-
-// 👇 ahora es singleton
+/*
 object DataUserRepository : UserRepository {
 
     private val users = mutableListOf(
@@ -179,10 +178,9 @@ object DataUserRepository : UserRepository {
     }
 
     override suspend fun getAllUsers(): List<User> {
-        // 👇 devolvemos SIEMPRE una nueva lista
         return users.toList()
     }
 
     override suspend fun getUsersByRole(rol: String): List<User> =
-        users.filter { it.rol == rol }.toList() // 👈 también copia
-}
+        users.filter { it.rol == rol }.toList()
+}*/
