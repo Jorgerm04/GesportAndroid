@@ -1,11 +1,6 @@
 package com.example.gesport.database
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Update
-import androidx.room.Delete
+import androidx.room.*
 import com.example.gesport.models.User
 import kotlinx.coroutines.flow.Flow
 

@@ -1,230 +1,366 @@
 package com.example.gesport.ui.dashboard.GesUserScreen
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.gesport.data.RoomUserRepository
-import com.example.gesport.models.UserRoles
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FormUserScreen(
-    navController: NavHostController,
-    userId: Int? = null
-) {
+fun FormUserScreen(navController: NavHostController, userId: Int? = null) {
 
     val context = LocalContext.current
-    val viewModel: GesUserViewModel = viewModel(
-        factory = GesUserViewModelFactory(context) // ¡Igual aquí!
-    )
+    val vm: GesUserViewModel = viewModel(factory = GesUserViewModelFactory(context))
 
-    val currentUser by viewModel.currentUser.observeAsState()
-    val saveCompleted by viewModel.saveCompleted.observeAsState(false)
+    val currentUser    by vm.currentUser.observeAsState()
+    val saveCompleted  by vm.saveCompleted.observeAsState(false)
+    val equipoAsociado by vm.equipoAsociado.observeAsState()
+    val loadingEquipo  by vm.loadingEquipo.observeAsState(false)
 
     LaunchedEffect(userId) {
-        if (userId != null) {
-            viewModel.loadUserById(userId)
-        }
+        if (userId != null) vm.loadUserById(userId)
     }
-
     LaunchedEffect(saveCompleted) {
         if (saveCompleted) {
             navController.popBackStack()
-            viewModel.onSaveCompletedHandled()
+            vm.onSaveCompletedHandled()
         }
     }
 
-    var nombre by rememberSaveable (currentUser) { mutableStateOf(currentUser?.nombre ?: "") }
-    var email by rememberSaveable(currentUser) { mutableStateOf(currentUser?.email ?: "") }
+    var nombre   by rememberSaveable(currentUser) { mutableStateOf(currentUser?.nombre   ?: "") }
+    var email    by rememberSaveable(currentUser) { mutableStateOf(currentUser?.email    ?: "") }
     var password by rememberSaveable(currentUser) { mutableStateOf(currentUser?.password ?: "") }
-    var rol by rememberSaveable(currentUser) { mutableStateOf(currentUser?.rol ?: "JUGADOR") }
+    var rol      by rememberSaveable(currentUser) { mutableStateOf(currentUser?.rol      ?: "JUGADOR") }
 
-    val bg = Brush.verticalGradient(
-        colors = listOf(Color(0xFF0B0E12), Color(0xFF12171E))
+    LaunchedEffect(currentUser, rol) {
+        if (userId != null && (rol == "JUGADOR" || rol == "ENTRENADOR")) {
+            vm.loadEquipoAsociado(userId, rol)
+        }
+    }
+
+    val roles = listOf("ADMIN", "ENTRENADOR", "ARBITRO", "JUGADOR")
+    var rolDropdownExpanded by remember { mutableStateOf(false) }
+
+    val bg = Brush.verticalGradient(colors = listOf(Color(0xFF0B0E12), Color(0xFF12171E)))
+    val fieldColors = TextFieldDefaults.colors(
+        focusedContainerColor     = Color(0x0DFFFFFF),
+        unfocusedContainerColor   = Color(0x0DFFFFFF),
+        focusedIndicatorColor     = Color.Transparent,
+        unfocusedIndicatorColor   = Color.Transparent,
+        focusedLabelColor         = Color(0xFF135B90),
+        unfocusedLabelColor       = Color(0x99FFFFFF),
+        cursorColor               = Color(0xFF135B90),
+        focusedTextColor          = Color.White,
+        unfocusedTextColor        = Color.White,
+        focusedLeadingIconColor   = Color(0x99FFFFFF),
+        unfocusedLeadingIconColor = Color(0x99FFFFFF),
+        disabledContainerColor    = Color(0x0DFFFFFF),
+        disabledTextColor         = Color(0x66FFFFFF),
+        disabledLeadingIconColor  = Color(0x44FFFFFF),
+        disabledLabelColor        = Color(0x44FFFFFF),
+        disabledIndicatorColor    = Color.Transparent
     )
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(bg)
-    ) {
+    Box(modifier = Modifier.fillMaxSize().background(bg)) {
         Scaffold(
             containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
                     title = {
                         Text(
-                            text = if (userId == null) "Nuevo usuario" else "Editar usuario",
+                            if (userId == null) "Nuevo usuario" else "Editar usuario",
                             color = Color(0xFFE7F1FF),
                             fontWeight = FontWeight.SemiBold
                         )
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        titleContentColor = Color.White,
-                        navigationIconContentColor = Color.White
-                    )
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             }
-        ) { paddingValues ->
+        ) { padding ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                    .padding(padding)
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(Modifier.height(8.dp))
 
+                // ── Nombre ────────────────────────────────────────────────
                 TextField(
-                    value = nombre,
+                    value         = nombre,
                     onValueChange = { nombre = it },
-                    label = { Text("Nombre") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = textFieldColorsLikeLogin()
-                )
-
-                Spacer(Modifier.height(12.dp))
-
-                TextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = textFieldColorsLikeLogin()
-                )
-
-                Spacer(Modifier.height(12.dp))
-
-                TextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Contraseña") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = textFieldColorsLikeLogin()
+                    label         = { Text("Nombre completo") },
+                    leadingIcon   = { Icon(Icons.Default.Person, contentDescription = null) },
+                    singleLine    = true,
+                    shape         = RoundedCornerShape(12.dp),
+                    modifier      = Modifier.fillMaxWidth(),
+                    colors        = fieldColors
                 )
 
                 Spacer(Modifier.height(16.dp))
 
-                Text(
-                    text = "Rol",
-                    color = Color(0xCCFFFFFF),
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp)
+                // ── Email ─────────────────────────────────────────────────
+                TextField(
+                    value           = email,
+                    onValueChange   = { email = it },
+                    label           = { Text("Email") },
+                    leadingIcon     = { Icon(Icons.Default.Email, contentDescription = null) },
+                    singleLine      = true,
+                    enabled         = userId == null,
+                    shape           = RoundedCornerShape(12.dp),
+                    modifier        = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    colors          = fieldColors
                 )
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Spacer(Modifier.height(16.dp))
+
+                // ── Contraseña ────────────────────────────────────────────
+                TextField(
+                    value         = password,
+                    onValueChange = { password = it },
+                    label         = { Text("Contraseña") },
+                    leadingIcon   = { Icon(Icons.Default.Lock, contentDescription = null) },
+                    singleLine    = true,
+                    shape         = RoundedCornerShape(12.dp),
+                    modifier      = Modifier.fillMaxWidth(),
+                    colors        = fieldColors
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                // ── Rol ───────────────────────────────────────────────────
+                Text(
+                    "Rol del usuario",
+                    color    = Color(0x99FFFFFF),
+                    fontSize = 12.sp,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded         = rolDropdownExpanded,
+                    onExpandedChange = { rolDropdownExpanded = !rolDropdownExpanded },
+                    modifier         = Modifier.fillMaxWidth()
                 ) {
-                    UserRoles.allRoles.forEach { (roleKey, roleLabel) ->
-                        FilterChip(
-                            selected = rol == roleKey,
-                            onClick = { rol = roleKey },
-                            label = { Text(roleLabel) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                containerColor = Color(0xFF0B0E12),
-                                labelColor = Color.White,
-                                selectedContainerColor = Color(0xFF135B90),
-                                selectedLabelColor = Color.White
-                            ),
-                            border = null
-                        )
+                    TextField(
+                        value         = rol,
+                        onValueChange = {},
+                        readOnly      = true,
+                        leadingIcon   = { Icon(Icons.Default.Badge, contentDescription = null) },
+                        trailingIcon  = {
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null,
+                                tint = Color(0x99FFFFFF))
+                        },
+                        shape    = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        colors   = fieldColors
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded         = rolDropdownExpanded,
+                        onDismissRequest = { rolDropdownExpanded = false },
+                        modifier         = Modifier.background(Color(0xFF12171E))
+                    ) {
+                        roles.forEach { roleKey ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        roleKey,
+                                        color = if (rol == roleKey) Color(0xFF135B90) else Color.White
+                                    )
+                                },
+                                onClick = {
+                                    rol = roleKey
+                                    rolDropdownExpanded = false
+                                    if (userId != null && (roleKey == "JUGADOR" || roleKey == "ENTRENADOR")) {
+                                        vm.loadEquipoAsociado(userId, roleKey)
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
 
-                Spacer(Modifier.height(24.dp))
+                // ── Equipo asociado ───────────────────────────────────────
+                if (userId != null && (rol == "JUGADOR" || rol == "ENTRENADOR")) {
+                    Spacer(Modifier.height(28.dp))
 
-                val gradient = Brush.horizontalGradient(
-                    colors = listOf(
-                        Color(0xFF0B2843),
-                        Color(0xFF135B90),
-                        Color(0xFF0B2843)
-                    )
-                )
+                    val isEntrenador = rol == "ENTRENADOR"
+                    val colorEquipo  = if (isEntrenador) Color(0xFF5B9EE7) else Color(0xFF4ECB71)
+                    val iconEquipo   = if (isEntrenador) Icons.Default.PersonPin else Icons.Default.SportsSoccer
+                    val labelEquipo  = if (isEntrenador) "Equipo que entrena" else "Equipo"
 
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(iconEquipo, contentDescription = null,
+                            tint = colorEquipo, modifier = Modifier.size(15.dp))
+                        Spacer(Modifier.width(7.dp))
+                        Text(labelEquipo, color = colorEquipo,
+                            fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+
+                    if (loadingEquipo) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(64.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0x0DFFFFFF)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color       = Color(0x66FFFFFF),
+                                strokeWidth = 2.dp,
+                                modifier    = Modifier.size(20.dp)
+                            )
+                        }
+                    } else if (equipoAsociado == null) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0x08FFFFFF))
+                                .border(1.dp, Color(0x12FFFFFF), RoundedCornerShape(12.dp))
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Groups, contentDescription = null,
+                                tint = Color(0x40FFFFFF), modifier = Modifier.size(22.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                if (isEntrenador) "No entrena ningún equipo todavía"
+                                else "No pertenece a ningún equipo todavía",
+                                color    = Color(0x66FFFFFF),
+                                fontSize = 13.sp
+                            )
+                        }
+                    } else {
+                        val equipo = equipoAsociado!!
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(colorEquipo.copy(alpha = 0.07f))
+                                .border(1.dp, colorEquipo.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                                .clickable { navController.navigate("formTeam/${equipo.id}") }
+                                .padding(14.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(colorEquipo.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.Groups, contentDescription = null,
+                                        tint = colorEquipo, modifier = Modifier.size(24.dp))
+                                }
+
+                                Spacer(Modifier.width(14.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(equipo.nombre, color = Color.White,
+                                        fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    if (equipo.descripcion.isNotEmpty()) {
+                                        Spacer(Modifier.height(2.dp))
+                                        Text(equipo.descripcion, color = Color(0x80FFFFFF),
+                                            fontSize = 12.sp, maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis)
+                                    }
+                                    Spacer(Modifier.height(6.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.SportsSoccer, contentDescription = null,
+                                            tint = colorEquipo.copy(alpha = 0.7f),
+                                            modifier = Modifier.size(12.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        val n = equipo.getJugadoresIdsList().size
+                                        Text("$n jugador${if (n == 1) "" else "es"}",
+                                            color = colorEquipo.copy(alpha = 0.8f), fontSize = 11.sp)
+                                        if (isEntrenador) {
+                                            Spacer(Modifier.width(10.dp))
+                                            Icon(Icons.Default.PersonPin, contentDescription = null,
+                                                tint = colorEquipo.copy(alpha = 0.7f),
+                                                modifier = Modifier.size(12.dp))
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Tú eres el entrenador",
+                                                color = colorEquipo.copy(alpha = 0.8f), fontSize = 11.sp)
+                                        }
+                                    }
+                                }
+
+                                Icon(Icons.Default.ChevronRight, contentDescription = null,
+                                    tint = colorEquipo.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(40.dp))
+
+                // ── Botón guardar ─────────────────────────────────────────
                 Button(
                     onClick = {
-                        viewModel.saveUser(
-                            userId = userId,
-                            nombre = nombre,
-                            email = email,
+                        vm.saveUser(
+                            userId   = userId,
+                            nombre   = nombre,
+                            email    = email,
                             password = password,
-                            rol = rol
+                            rol      = rol
                         )
                     },
-                    shape = RoundedCornerShape(14.dp),
+                    shape    = RoundedCornerShape(14.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
-                        .background(gradient, RoundedCornerShape(14.dp)),
+                        .height(52.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color(0xFF0B2843), Color(0xFF135B90), Color(0xFF0B2843))
+                            ),
+                            RoundedCornerShape(14.dp)
+                        ),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Transparent,
-                        contentColor = Color.White
+                        contentColor   = Color.White
                     )
                 ) {
                     Text(
-                        text = if (userId == null) "Crear usuario" else "Guardar cambios",
-                        fontWeight = FontWeight.SemiBold
+                        if (userId == null) "Crear usuario" else "Guardar cambios",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize   = 16.sp
                     )
                 }
+
+                Spacer(Modifier.height(32.dp))
             }
         }
     }
 }
-
-@Composable
-private fun textFieldColorsLikeLogin() = TextFieldDefaults.colors(
-    focusedContainerColor = Color.Transparent,
-    unfocusedContainerColor = Color.Transparent,
-    focusedIndicatorColor = Color(0xFF135B90),
-    unfocusedIndicatorColor = Color(0x334B5563),
-    focusedLabelColor = Color(0xFF135B90),
-    unfocusedLabelColor = Color(0x99FFFFFF),
-    cursorColor = Color(0xFF135B90),
-    focusedTextColor = Color.White,
-    unfocusedTextColor = Color.White
-)

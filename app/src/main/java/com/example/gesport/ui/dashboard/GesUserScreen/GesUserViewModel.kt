@@ -7,12 +7,17 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.gesport.models.Team
 import com.example.gesport.models.User
+import com.example.gesport.repository.TeamRepository
 import com.example.gesport.repository.UserRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-class GesUserViewModel(val userRepository: UserRepository) : ViewModel() {
+class GesUserViewModel(
+    val userRepository: UserRepository,
+    val teamRepository: TeamRepository
+) : ViewModel() {
 
     private var _users by mutableStateOf<List<User>>(emptyList())
     val users: List<User> get() = _users
@@ -29,8 +34,13 @@ class GesUserViewModel(val userRepository: UserRepository) : ViewModel() {
     private val _saveCompleted = MutableLiveData(false)
     val saveCompleted: LiveData<Boolean> = _saveCompleted
 
+    private val _equipoAsociado = MutableLiveData<Team?>(null)
+    val equipoAsociado: LiveData<Team?> = _equipoAsociado
+
+    private val _loadingEquipo = MutableLiveData(false)
+    val loadingEquipo: LiveData<Boolean> = _loadingEquipo
+
     init {
-        // CAMBIO: Colectamos el Flow de Room
         viewModelScope.launch {
             userRepository.getAllUsers().collect { lista ->
                 _users = lista
@@ -39,57 +49,53 @@ class GesUserViewModel(val userRepository: UserRepository) : ViewModel() {
     }
 
     fun loadUsers() {
-        viewModelScope.launch {
-            refreshUsers()
-        }
+        viewModelScope.launch { refreshUsers() }
     }
 
     fun onRoleSelected(rol: String?) {
         _selectedRole = rol
-        viewModelScope.launch {
-            refreshUsers()
-        }
+        viewModelScope.launch { refreshUsers() }
     }
 
     fun onSearchQueryChange(query: String) {
         _searchQuery = query
-        viewModelScope.launch {
-            refreshUsers()
-        }
+        viewModelScope.launch { refreshUsers() }
     }
 
     private suspend fun refreshUsers() {
-        // Usamos .first() para obtener la emisión actual del Flow y convertirla en List
         val baseList = if (_selectedRole == null) {
             userRepository.getAllUsers().first()
         } else {
             userRepository.getUsersByRole(_selectedRole!!).first()
         }
-
         val q = _searchQuery.trim()
-        _users = if (q.isBlank()) {
-            baseList
-        } else {
+        _users = if (q.isBlank()) baseList
+        else {
             val lower = q.lowercase()
-            // Ahora baseList ya es una lista, así que filter funciona perfectamente
-            baseList.filter { user ->
-                user.nombre.lowercase().contains(lower) ||
-                        user.email.lowercase().contains(lower)
+            baseList.filter {
+                it.nombre.lowercase().contains(lower) ||
+                        it.email.lowercase().contains(lower)
             }
-        }
-    }
-
-    fun addUser(user: User) {
-        viewModelScope.launch {
-            userRepository.addUser(user)
-            refreshUsers()
         }
     }
 
     fun loadUserById(userId: Int) {
         viewModelScope.launch {
-            val user = userRepository.getUserById(userId)
-            _currentUser.value = user
+            _currentUser.value = userRepository.getUserById(userId)
+        }
+    }
+
+    fun loadEquipoAsociado(userId: Int, rol: String) {
+        viewModelScope.launch {
+            _loadingEquipo.value = true
+            _equipoAsociado.value = null
+            val todosEquipos = teamRepository.getAllTeams().first()
+            _equipoAsociado.value = if (rol == "ENTRENADOR") {
+                todosEquipos.firstOrNull { it.entrenadorId == userId }
+            } else {
+                todosEquipos.firstOrNull { it.getJugadoresIdsList().contains(userId) }
+            }
+            _loadingEquipo.value = false
         }
     }
 
@@ -102,35 +108,23 @@ class GesUserViewModel(val userRepository: UserRepository) : ViewModel() {
     ) {
         viewModelScope.launch {
             if (userId == null) {
-                val newUser = User(
-                    id = 0,
-                    nombre = nombre,
-                    email = email,
-                    password = password,
-                    rol = rol
+                userRepository.addUser(
+                    User(id = 0, nombre = nombre, email = email, password = password, rol = rol)
                 )
-                userRepository.addUser(newUser)
             } else {
                 val existing = userRepository.getUserById(userId)
                 if (existing != null) {
-                    val updated = existing.copy(
-                        nombre = nombre,
-                        email = email,
-                        password = password,
-                        rol = rol
+                    userRepository.updateUser(
+                        existing.copy(nombre = nombre, email = email, password = password, rol = rol)
                     )
-                    userRepository.updateUser(updated)
                 }
             }
-
             refreshUsers()
             _saveCompleted.value = true
         }
     }
 
-    fun onSaveCompletedHandled() {
-        _saveCompleted.value = false
-    }
+    fun onSaveCompletedHandled() { _saveCompleted.value = false }
 
     fun deleteUser(id: Int) {
         viewModelScope.launch {

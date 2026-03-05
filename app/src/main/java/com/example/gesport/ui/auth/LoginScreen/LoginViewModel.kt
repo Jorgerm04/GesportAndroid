@@ -4,65 +4,51 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.ges_sports.domain.LogicLogin
 import com.example.gesport.repository.UserRepository
 import kotlinx.coroutines.launch
 
+data class LoginDestination(val userId: Int, val nombre: String, val rol: String)
+
 class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
 
-    private val logic = LogicLogin()
-
-    private val _email = MutableLiveData("")
-    private val _password = MutableLiveData("")
+    private val _email        = MutableLiveData("")
+    private val _password     = MutableLiveData("")
     private val _showPassword = MutableLiveData(false)
-    private val _error = MutableLiveData("")
+    private val _error        = MutableLiveData("")
 
-    private val _navigateToHome = MutableLiveData<String?>(null)
-    private val _navigateToDashboard = MutableLiveData<String?>(null)
+    private val _navigateToHome      = MutableLiveData<LoginDestination?>(null)
+    private val _navigateToDashboard = MutableLiveData<LoginDestination?>(null)
 
-    val email: LiveData<String> = _email
-    val password: LiveData<String> = _password
-    val showPassword: LiveData<Boolean> = _showPassword
-    val error: LiveData<String> = _error
-    val navigateToHome: LiveData<String?> = _navigateToHome
-    val navigateToDashboard: LiveData<String?> = _navigateToDashboard
+    val email:               LiveData<String>              = _email
+    val password:            LiveData<String>              = _password
+    val showPassword:        LiveData<Boolean>             = _showPassword
+    val error:               LiveData<String>              = _error
+    val navigateToHome:      LiveData<LoginDestination?>   = _navigateToHome
+    val navigateToDashboard: LiveData<LoginDestination?>   = _navigateToDashboard
 
-    fun setEmail(newEmail: String) {
-        _email.value = newEmail
-    }
-
-    fun setPassword(newPassword: String) {
-        _password.value = newPassword
-    }
-
-    fun toggleShowPassword() {
-        _showPassword.value = !(_showPassword.value ?: false)
-    }
-
-    fun clearError() {
-        _error.value = ""
-    }
+    fun setEmail(v: String)    { _email.value    = v }
+    fun setPassword(v: String) { _password.value = v }
+    fun toggleShowPassword()   { _showPassword.value = !(_showPassword.value ?: false) }
+    fun clearError()           { _error.value = "" }
 
     fun login() {
-        val currentEmail = _email.value.orEmpty()
-        val currentPassword = _password.value.orEmpty()
+        val email    = _email.value.orEmpty()
+        val password = _password.value.orEmpty()
 
-        if (currentEmail.isBlank() || currentPassword.isBlank()) {
+        if (email.isBlank() || password.isBlank()) {
             _error.value = "Los campos no pueden estar vacíos."
             return
         }
 
         viewModelScope.launch {
-            // Buscamos en Room por email
-            val user = userRepository.getUserByEmail(currentEmail)
-
-            if (user != null && user.password == currentPassword) {
+            val user = userRepository.getUserByEmail(email)
+            if (user != null && user.password == password) {
                 _error.value = ""
-                // Redirigir según el rol (Asegúrate de que el String coincida con tu BD)
-                if (user.rol == "ADMIN_DEPORTIVO" || user.rol == "ADMIN") {
-                    _navigateToDashboard.value = user.nombre
+                val dest = LoginDestination(user.id, user.nombre, user.rol)
+                if (user.rol == "ADMIN") {
+                    _navigateToDashboard.value = dest
                 } else {
-                    _navigateToHome.value = user.nombre
+                    _navigateToHome.value = dest
                 }
             } else {
                 _error.value = "Email o contraseña incorrectos."
@@ -71,7 +57,7 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
     }
 
     fun onNavigationDone() {
-        _navigateToHome.value = null
+        _navigateToHome.value      = null
         _navigateToDashboard.value = null
     }
 }
