@@ -92,19 +92,36 @@ fun todayMs(): Long = Calendar.getInstance().apply {
 @Composable
 fun FormBookingScreen(
     navController: NavHostController,
-    currentUserId: Int,
-    currentUserRol: String,
+    userId: Int = 0,
     bookingId: Int? = null
 ) {
     val context = LocalContext.current
     val vm: GesBookingViewModel = viewModel(factory = GesBookingViewModelFactory(context))
 
+    val currentUser    by vm.currentUser.observeAsState()
     val currentBooking by vm.currentBooking.observeAsState()
     val saveCompleted  by vm.saveCompleted.observeAsState(false)
     val conflictError  by vm.conflictError.observeAsState()
     val allUsers   = vm.allUsers
     val allCourts  = vm.allCourts
     val allTeams   = vm.allTeams
+
+    // Carga el usuario logueado por ID
+    LaunchedEffect(userId) { if (userId != 0) vm.loadCurrentUser(userId) }
+
+    // Mostrar loading hasta que el usuario cargue.
+    // Evita que isAdmin/isEntrenador sean false en el primer frame
+    // y el selector de tipo de reserva no aparezca.
+    if (currentUser == null) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(Color(0xFF0B0E12)),
+            contentAlignment = Alignment.Center
+        ) { CircularProgressIndicator(color = Color(0xFF135B90)) }
+        return
+    }
+
+    val currentUserId  = currentUser!!.id
+    val currentUserRol = currentUser!!.rol
 
     val isAdmin      = currentUserRol == "ADMIN"
     val isEntrenador = currentUserRol == "ENTRENADOR"

@@ -31,40 +31,28 @@ fun Navigation() {
 
         // ── Home (jugadores, entrenadores, árbitros) ──────────────────────
         composable(
-            "home/{userId}/{nombre}/{rol}",
-            arguments = listOf(
-                navArgument("userId") { type = NavType.IntType },
-                navArgument("nombre") { type = NavType.StringType },
-                navArgument("rol")    { type = NavType.StringType }
-            )
+            "home/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.IntType })
         ) { back ->
             HomeScreen(
                 navController = navController,
-                userId        = back.arguments?.getInt("userId") ?: 0,
-                nombre1       = back.arguments?.getString("nombre"),
-                rol           = back.arguments?.getString("rol") ?: ""
+                userId        = back.arguments?.getInt("userId") ?: 0
             )
         }
 
         // ── Dashboard (admin) ─────────────────────────────────────────────
         composable(
-            "dashboard/{userId}/{nombre}/{rol}",
-            arguments = listOf(
-                navArgument("userId") { type = NavType.IntType },
-                navArgument("nombre") { type = NavType.StringType },
-                navArgument("rol")    { type = NavType.StringType }
-            )
+            "dashboard/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.IntType })
         ) { back ->
             DashboardScreen(
                 navController = navController,
-                userId        = back.arguments?.getInt("userId") ?: 0,
-                nombre        = back.arguments?.getString("nombre"),
-                rol           = back.arguments?.getString("rol") ?: "ADMIN"
+                userId        = back.arguments?.getInt("userId") ?: 0
             )
         }
 
         // ── Usuarios ──────────────────────────────────────────────────────
-        composable("gesUser") { GesUserScreen(navController) }
+        composable("gesUser")  { GesUserScreen(navController) }
         composable("formuser") { FormUserScreen(navController) }
         composable(
             "formuser/{userId}",
@@ -72,7 +60,7 @@ fun Navigation() {
         ) { back -> FormUserScreen(navController, back.arguments?.getInt("userId")) }
 
         // ── Pistas ────────────────────────────────────────────────────────
-        composable("gesCourt") { GesCourtScreen(navController) }
+        composable("gesCourt")  { GesCourtScreen(navController) }
         composable("formCourt") { FormCourtScreen(navController) }
         composable(
             "formCourt/{courtId}",
@@ -80,7 +68,7 @@ fun Navigation() {
         ) { back -> FormCourtScreen(navController, back.arguments?.getInt("courtId")) }
 
         // ── Equipos ───────────────────────────────────────────────────────
-        composable("gesTeam") { GesTeamScreen(navController) }
+        composable("gesTeam")  { GesTeamScreen(navController) }
         composable("formTeam") { FormTeamScreen(navController) }
         composable(
             "formTeam/{teamId}",
@@ -89,44 +77,36 @@ fun Navigation() {
 
         // ── Reservas ──────────────────────────────────────────────────────
         composable(
-            "gesBooking/{userId}/{rol}",
-            arguments = listOf(
-                navArgument("userId") { type = NavType.IntType },
-                navArgument("rol")    { type = NavType.StringType }
-            )
+            "gesBooking/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.IntType })
         ) { back ->
             GesBookingScreen(
-                navController  = navController,
-                currentUserId  = back.arguments?.getInt("userId") ?: 0,
-                currentUserRol = back.arguments?.getString("rol") ?: "ADMIN"
+                navController = navController,
+                userId        = back.arguments?.getInt("userId") ?: 0
             )
         }
+
         composable(
-            "formBooking/{userId}/{rol}",
-            arguments = listOf(
-                navArgument("userId") { type = NavType.IntType },
-                navArgument("rol")    { type = NavType.StringType }
-            )
+            "formBooking/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.IntType })
         ) { back ->
             FormBookingScreen(
                 navController = navController,
-                currentUserId = back.arguments?.getInt("userId") ?: 0,
-                currentUserRol = back.arguments?.getString("rol") ?: "ADMIN"
+                userId        = back.arguments?.getInt("userId") ?: 0
             )
         }
+
         composable(
-            "formBooking/{userId}/{rol}/{bookingId}",
+            "formBooking/{userId}/{bookingId}",
             arguments = listOf(
                 navArgument("userId")    { type = NavType.IntType },
-                navArgument("rol")       { type = NavType.StringType },
                 navArgument("bookingId") { type = NavType.IntType }
             )
         ) { back ->
             FormBookingScreen(
-                navController  = navController,
-                currentUserId  = back.arguments?.getInt("userId") ?: 0,
-                currentUserRol = back.arguments?.getString("rol") ?: "ADMIN",
-                bookingId      = back.arguments?.getInt("bookingId")
+                navController = navController,
+                userId        = back.arguments?.getInt("userId") ?: 0,
+                bookingId     = back.arguments?.getInt("bookingId")
             )
         }
     }

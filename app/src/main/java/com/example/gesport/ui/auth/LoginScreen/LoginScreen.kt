@@ -37,24 +37,15 @@ fun LoginScreen(navController: NavHostController) {
     val context = LocalContext.current
     val vm: LoginViewModel = viewModel(factory = LoginViewModelFactory(context))
 
-    val email           by vm.email.observeAsState("")
-    val password        by vm.password.observeAsState("")
-    val showPassword    by vm.showPassword.observeAsState(false)
-    val error           by vm.error.observeAsState("")
-    val navigateToHome  by vm.navigateToHome.observeAsState(null)
-    val navigateToDash  by vm.navigateToDashboard.observeAsState(null)
+    val email        by vm.email.observeAsState("")
+    val password     by vm.password.observeAsState("")
+    val showPassword by vm.showPassword.observeAsState(false)
+    val error        by vm.error.observeAsState("")
+    val navigateTo   by vm.navigateTo.observeAsState(null)
 
-    LaunchedEffect(navigateToHome) {
-        navigateToHome?.let { dest ->
-            navController.navigate("home/${dest.userId}/${dest.nombre}/${dest.rol}") {
-                popUpTo("login") { inclusive = true }
-            }
-            vm.onNavigationDone()
-        }
-    }
-    LaunchedEffect(navigateToDash) {
-        navigateToDash?.let { dest ->
-            navController.navigate("dashboard/${dest.userId}/${dest.nombre}/${dest.rol}") {
+    LaunchedEffect(navigateTo) {
+        navigateTo?.let { dest ->
+            navController.navigate(dest) {
                 popUpTo("login") { inclusive = true }
             }
             vm.onNavigationDone()

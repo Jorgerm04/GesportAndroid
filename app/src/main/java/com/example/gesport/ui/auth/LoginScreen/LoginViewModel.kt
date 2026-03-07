@@ -7,8 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.gesport.repository.UserRepository
 import kotlinx.coroutines.launch
 
-data class LoginDestination(val userId: Int, val nombre: String, val rol: String)
-
 class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
 
     private val _email        = MutableLiveData("")
@@ -16,15 +14,14 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
     private val _showPassword = MutableLiveData(false)
     private val _error        = MutableLiveData("")
 
-    private val _navigateToHome      = MutableLiveData<LoginDestination?>(null)
-    private val _navigateToDashboard = MutableLiveData<LoginDestination?>(null)
+    // Emite la ruta destino: "home/{id}" o "dashboard/{id}"
+    private val _navigateTo = MutableLiveData<String?>(null)
 
-    val email:               LiveData<String>              = _email
-    val password:            LiveData<String>              = _password
-    val showPassword:        LiveData<Boolean>             = _showPassword
-    val error:               LiveData<String>              = _error
-    val navigateToHome:      LiveData<LoginDestination?>   = _navigateToHome
-    val navigateToDashboard: LiveData<LoginDestination?>   = _navigateToDashboard
+    val email:        LiveData<String>  = _email
+    val password:     LiveData<String>  = _password
+    val showPassword: LiveData<Boolean> = _showPassword
+    val error:        LiveData<String>  = _error
+    val navigateTo:   LiveData<String?> = _navigateTo
 
     fun setEmail(v: String)    { _email.value    = v }
     fun setPassword(v: String) { _password.value = v }
@@ -44,20 +41,12 @@ class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
             val user = userRepository.getUserByEmail(email)
             if (user != null && user.password == password) {
                 _error.value = ""
-                val dest = LoginDestination(user.id, user.nombre, user.rol)
-                if (user.rol == "ADMIN") {
-                    _navigateToDashboard.value = dest
-                } else {
-                    _navigateToHome.value = dest
-                }
+                _navigateTo.value = if (user.rol == "ADMIN") "dashboard/${user.id}" else "home/${user.id}"
             } else {
                 _error.value = "Email o contraseña incorrectos."
             }
         }
     }
 
-    fun onNavigationDone() {
-        _navigateToHome.value      = null
-        _navigateToDashboard.value = null
-    }
+    fun onNavigationDone() { _navigateTo.value = null }
 }

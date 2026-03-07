@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -34,19 +35,23 @@ import java.util.*
 @Composable
 fun GesBookingScreen(
     navController: NavHostController,
-    currentUserId: Int = 0,
-    currentUserRol: String = "ADMIN"
+    userId: Int = 0
 ) {
     val context      = LocalContext.current
     val focusManager = LocalFocusManager.current
     val vm: GesBookingViewModel = viewModel(factory = GesBookingViewModelFactory(context))
 
-    val bookings      = vm.bookings
+    val currentUser by vm.currentUser.observeAsState()
+    val bookings     = vm.bookings
     val showCancelled = vm.showCancelled
 
+    LaunchedEffect(userId) { if (userId != 0) vm.loadCurrentUser(userId) }
+
+    val currentUserRol = currentUser?.rol ?: "ADMIN"
+
     // ── Búsqueda y filtros ────────────────────────────────────────────────
-    var searchQuery        by remember { mutableStateOf("") }
-    var filterTipo         by remember { mutableStateOf<BookingType?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    var filterTipo  by remember { mutableStateOf<BookingType?>(null) }
 
     // ── Diálogos ──────────────────────────────────────────────────────────
     var bookingToDelete by remember { mutableStateOf<Booking?>(null) }
@@ -62,8 +67,7 @@ fun GesBookingScreen(
                 b.equipoLocalNombre?.lowercase()?.contains(q) == true ||
                 b.equipoVisitanteNombre?.lowercase()?.contains(q) == true ||
                 b.arbitroNombre?.lowercase()?.contains(q) == true
-
-        val matchesTipo   = filterTipo == null || b.tipoEnum == filterTipo
+        val matchesTipo = filterTipo == null || b.tipoEnum == filterTipo
         matchesSearch && matchesTipo
     }
 
@@ -82,7 +86,7 @@ fun GesBookingScreen(
             },
             floatingActionButton = {
                 FloatingActionButton(
-                    onClick        = { navController.navigate("formBooking/$currentUserId/$currentUserRol") },
+                    onClick        = { navController.navigate("formBooking/${currentUser!!.id}") },
                     containerColor = Color(0xFF135B90),
                     contentColor   = Color.White
                 ) {
@@ -96,15 +100,12 @@ fun GesBookingScreen(
                     .padding(innerPadding)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-
                 // ── Barra de búsqueda ─────────────────────────────────────
                 TextField(
                     value         = searchQuery,
                     onValueChange = { searchQuery = it },
                     placeholder   = { Text("Buscar por pista, usuario, equipo…", fontSize = 13.sp) },
-                    leadingIcon   = {
-                        Icon(Icons.Default.Search, null, tint = Color(0x99FFFFFF))
-                    },
+                    leadingIcon   = { Icon(Icons.Default.Search, null, tint = Color(0x99FFFFFF)) },
                     trailingIcon  = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { searchQuery = ""; focusManager.clearFocus() }) {
@@ -137,7 +138,6 @@ fun GesBookingScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Chip canceladas
                     FilterChip(
                         selected = showCancelled,
                         onClick  = { vm.onShowCancelledChange(!showCancelled) },
@@ -149,14 +149,12 @@ fun GesBookingScreen(
                             selectedLabelColor     = Color(0xFFFF5555)
                         ),
                         border = FilterChipDefaults.filterChipBorder(
-                            enabled          = true,
-                            selected         = showCancelled,
-                            borderColor      = Color(0x1AFFFFFF),
+                            enabled             = true,
+                            selected            = showCancelled,
+                            borderColor         = Color(0x1AFFFFFF),
                             selectedBorderColor = Color(0xFFFF5555)
                         )
                     )
-
-                    // Chips por tipo
                     val tiposConfig = listOf(
                         BookingType.INDIVIDUAL to Color(0xFF5B9EE7),
                         BookingType.EQUIPO     to Color(0xFFFFCC44),
@@ -205,8 +203,7 @@ fun GesBookingScreen(
                                 tint = Color(0x33FFFFFF), modifier = Modifier.size(48.dp))
                             Spacer(Modifier.height(12.dp))
                             Text(
-                                if (hayFiltros) "Sin resultados para tu búsqueda"
-                                else            "No hay reservas",
+                                if (hayFiltros) "Sin resultados para tu búsqueda" else "No hay reservas",
                                 color    = Color(0x66FFFFFF),
                                 fontSize = 15.sp
                             )
@@ -226,7 +223,7 @@ fun GesBookingScreen(
                         items(filtered, key = { it.id }) { booking ->
                             BookingListItem(
                                 booking           = booking,
-                                onEdit            = { navController.navigate("formBooking/$currentUserId/$currentUserRol/${booking.id}") },
+                                onEdit            = { navController.navigate("formBooking/${currentUser!!.id}/${booking.id}") },
                                 onDelete          = { bookingToDelete = booking },
                                 onToggleCancelada = { bookingToCancel = booking }
                             )
@@ -310,7 +307,6 @@ private fun BookingListItem(
             else                -> listOf(Color(0xFF0B2843), Color(0xFF135B90), Color(0xFF0B2843))
         }
     )
-
     val badgeColor = when (booking.tipoEnum) {
         BookingType.PARTIDO -> Color(0xFF4ECB71)
         BookingType.EQUIPO  -> Color(0xFFFFCC44)
@@ -330,7 +326,6 @@ private fun BookingListItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
 
-                    // ── Cabecera ──────────────────────────────────────────
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(booking.pistaNombre, color = Color.White,
                             fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
@@ -348,7 +343,6 @@ private fun BookingListItem(
 
                     Spacer(Modifier.height(4.dp))
 
-                    // ── Contenido según tipo ──────────────────────────────
                     when (booking.tipoEnum) {
                         BookingType.PARTIDO -> {
                             Text("${booking.equipoLocalNombre ?: "?"} vs ${booking.equipoVisitanteNombre ?: "?"}",
@@ -379,19 +373,16 @@ private fun BookingListItem(
 
                     Spacer(Modifier.height(4.dp))
 
-                    // ── Fecha y hora ──────────────────────────────────────
                     Text(
                         "${dateFmt.format(Date(booking.fecha))}  " +
                                 "${hourFmt.format(Date(booking.horaInicio))} → ${hourFmt.format(Date(booking.horaFin))}",
                         color = Color(0x99FFFFFF), fontSize = 12.sp
                     )
-
                     booking.notas?.let {
                         Text(it, color = Color(0x88FFFFFF), fontSize = 11.sp)
                     }
                 }
 
-                // ── Acciones ──────────────────────────────────────────────
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     IconButton(onClick = onToggleCancelada) {
                         Icon(

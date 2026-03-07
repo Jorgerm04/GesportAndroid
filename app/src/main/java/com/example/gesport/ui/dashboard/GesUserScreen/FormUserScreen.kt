@@ -305,15 +305,6 @@ fun FormUserScreen(navController: NavHostController, userId: Int? = null) {
                                         val n = equipo.getJugadoresIdsList().size
                                         Text("$n jugador${if (n == 1) "" else "es"}",
                                             color = colorEquipo.copy(alpha = 0.8f), fontSize = 11.sp)
-                                        if (isEntrenador) {
-                                            Spacer(Modifier.width(10.dp))
-                                            Icon(Icons.Default.PersonPin, contentDescription = null,
-                                                tint = colorEquipo.copy(alpha = 0.7f),
-                                                modifier = Modifier.size(12.dp))
-                                            Spacer(Modifier.width(4.dp))
-                                            Text("Tú eres el entrenador",
-                                                color = colorEquipo.copy(alpha = 0.8f), fontSize = 11.sp)
-                                        }
                                     }
                                 }
 

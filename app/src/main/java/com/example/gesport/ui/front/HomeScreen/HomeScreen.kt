@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -13,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -25,6 +27,7 @@ import androidx.navigation.NavHostController
 import com.example.gesport.R
 import com.example.gesport.models.Booking
 import com.example.gesport.models.BookingType
+import com.example.gesport.ui.components.ProfileBottomSheet
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -32,18 +35,18 @@ import java.util.*
 @Composable
 fun HomeScreen(
     navController: NavHostController,
-    userId: Int,
-    nombre1: String?,
-    rol: String
+    userId: Int
 ) {
     val context = LocalContext.current
     val vm: HomeViewModel = viewModel(factory = HomeViewModelFactory(context))
 
     val user     by vm.user.observeAsState()
     val bookings = vm.bookings
+    val rol      = user?.rol ?: ""
 
-    LaunchedEffect(nombre1) { nombre1?.let { vm.loadUser(it) } }
-    LaunchedEffect(userId, rol) { vm.loadBookings(userId, rol) }
+    var showProfile by remember { mutableStateOf(false) }
+
+    LaunchedEffect(userId) { vm.init(userId) }
 
     val bg = Brush.verticalGradient(colors = listOf(Color(0xFF0B0E12), Color(0xFF12171E)))
 
@@ -55,46 +58,28 @@ fun HomeScreen(
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Image(
-                                painter = painterResource(id = R.drawable.logo),
+                                painter            = painterResource(id = R.drawable.logo),
                                 contentDescription = "Logo",
-                                modifier = Modifier.size(32.dp)
+                                modifier           = Modifier.size(32.dp)
                             )
                             Spacer(Modifier.width(10.dp))
                             Text("Gesport", color = Color(0xFFE7F1FF), fontWeight = FontWeight.SemiBold)
                         }
                     },
                     actions = {
-                        var expanded by remember { mutableStateOf(false) }
-                        Box {
-                            IconButton(onClick = { expanded = true }) {
-                                Icon(Icons.Default.Person, null, tint = Color(0xFFE7F1FF))
-                            }
-                            DropdownMenu(
-                                expanded         = expanded,
-                                onDismissRequest = { expanded = false }
+                        IconButton(onClick = { showProfile = true }) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF135B90).copy(0.3f)),
+                                contentAlignment = Alignment.Center
                             ) {
-                                user?.let {
-                                    DropdownMenuItem(
-                                        text = {
-                                            Column {
-                                                Text(it.nombre, fontWeight = FontWeight.Bold)
-                                                Text(it.email, style = MaterialTheme.typography.bodySmall)
-                                                Text(it.rol, color = Color(0xFF135B90),
-                                                    style = MaterialTheme.typography.bodySmall)
-                                            }
-                                        },
-                                        onClick = {}
-                                    )
-                                    HorizontalDivider()
-                                }
-                                DropdownMenuItem(
-                                    text    = { Text("Cerrar sesión", color = Color.Red) },
-                                    onClick = {
-                                        expanded = false
-                                        vm.logout {
-                                            navController.navigate("login") { popUpTo(0) { inclusive = true } }
-                                        }
-                                    }
+                                Text(
+                                    user?.nombre?.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                                    color      = Color(0xFF5B9EE7),
+                                    fontSize   = 14.sp,
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
@@ -105,7 +90,7 @@ fun HomeScreen(
             floatingActionButton = {
                 if (rol != "ARBITRO") {
                     FloatingActionButton(
-                        onClick        = { navController.navigate("formBooking/$userId/$rol") },
+                        onClick        = { navController.navigate("formBooking/$userId") },
                         containerColor = Color(0xFF135B90),
                         contentColor   = Color.White
                     ) {
@@ -120,9 +105,8 @@ fun HomeScreen(
                     .padding(padding)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                // ── Saludo ────────────────────────────────────────────────
                 Text(
-                    "Hola, ${user?.nombre ?: nombre1 ?: ""} 👋",
+                    "Hola, ${user?.nombre ?: ""} 👋",
                     color      = Color(0xFFE7F1FF),
                     fontSize   = 22.sp,
                     fontWeight = FontWeight.Bold
@@ -140,12 +124,8 @@ fun HomeScreen(
 
                 Spacer(Modifier.height(20.dp))
 
-                // ── Lista de reservas ─────────────────────────────────────
                 if (bookings.isEmpty()) {
-                    Box(
-                        modifier        = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
                                 Icons.Default.EventBusy, null,
@@ -153,16 +133,10 @@ fun HomeScreen(
                                 modifier = Modifier.size(56.dp)
                             )
                             Spacer(Modifier.height(12.dp))
-                            Text(
-                                "No tienes reservas próximas",
-                                color    = Color(0x66FFFFFF),
-                                fontSize = 15.sp
-                            )
+                            Text("No tienes reservas próximas", color = Color(0x66FFFFFF), fontSize = 15.sp)
                             if (rol != "ARBITRO") {
                                 Spacer(Modifier.height(8.dp))
-                                TextButton(
-                                    onClick = { navController.navigate("formBooking/$userId/$rol") }
-                                ) {
+                                TextButton(onClick = { navController.navigate("formBooking/$userId") }) {
                                     Text("Crear una reserva", color = Color(0xFF5B9EE7))
                                 }
                             }
@@ -177,10 +151,28 @@ fun HomeScreen(
                 }
             }
         }
+
+        // ── Bottom Sheet perfil ───────────────────────────────────────────
+        if (showProfile) {
+            ProfileBottomSheet(
+                nombre        = user?.nombre ?: "",
+                email         = user?.email  ?: "",
+                rol           = rol,
+                equipos       = vm.misEquipos,
+                navController = navController,
+                esEntrenador  = rol == "ENTRENADOR",
+                onDismiss     = { showProfile = false },
+                onLogout      = {
+                    vm.logout {
+                        navController.navigate("login") { popUpTo(0) { inclusive = true } }
+                    }
+                }
+            )
+        }
     }
 }
 
-// ── Tarjeta de reserva para el Home ──────────────────────────────────────────
+// ── Tarjeta de reserva ────────────────────────────────────────────────────────
 
 @Composable
 private fun HomeBookingCard(booking: Booking) {
@@ -212,7 +204,6 @@ private fun HomeBookingCard(booking: Booking) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
 
-                // Icono lateral
                 Box(
                     modifier = Modifier
                         .size(44.dp)
@@ -232,25 +223,29 @@ private fun HomeBookingCard(booking: Booking) {
                 Spacer(Modifier.width(14.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    // Pista + badge
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(booking.pistaNombre, color = Color.White,
-                            fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        Text(
+                            booking.pistaNombre, color = Color.White,
+                            fontWeight = FontWeight.SemiBold, fontSize = 14.sp
+                        )
                         Spacer(Modifier.width(6.dp))
                         Surface(shape = RoundedCornerShape(6.dp), color = badgeColor.copy(0.2f)) {
-                            Text(booking.tipoEnum.label, color = badgeColor, fontSize = 10.sp,
+                            Text(
+                                booking.tipoEnum.label, color = badgeColor, fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                            )
                         }
                     }
 
                     Spacer(Modifier.height(3.dp))
 
-                    // Detalle según tipo
                     when (booking.tipoEnum) {
                         BookingType.PARTIDO ->
-                            Text("${booking.equipoLocalNombre} vs ${booking.equipoVisitanteNombre}",
-                                color = Color(0xCCFFFFFF), fontSize = 12.sp)
+                            Text(
+                                "${booking.equipoLocalNombre} vs ${booking.equipoVisitanteNombre}",
+                                color = Color(0xCCFFFFFF), fontSize = 12.sp
+                            )
                         BookingType.EQUIPO ->
                             Text(booking.equipoNombre ?: "", color = Color(0xCCFFFFFF), fontSize = 12.sp)
                         BookingType.INDIVIDUAL ->
@@ -259,10 +254,11 @@ private fun HomeBookingCard(booking: Booking) {
 
                     Spacer(Modifier.height(3.dp))
 
-                    // Fecha y hora
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.CalendarToday, null,
-                            tint = Color(0x80FFFFFF), modifier = Modifier.size(12.dp))
+                        Icon(
+                            Icons.Default.CalendarToday, null,
+                            tint = Color(0x80FFFFFF), modifier = Modifier.size(12.dp)
+                        )
                         Spacer(Modifier.width(4.dp))
                         Text(
                             "${dateFmt.format(Date(booking.fecha)).replaceFirstChar { it.uppercase() }}  " +

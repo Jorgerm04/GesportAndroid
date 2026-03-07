@@ -1,12 +1,19 @@
 package com.example.gesport.ui.dashboard.GesBookingsScreen
 
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.gesport.data.RoomBookingRepository
+import com.example.gesport.data.RoomCourtRepository
+import com.example.gesport.data.RoomTeamRepository
+import com.example.gesport.data.RoomUserRepository
+import com.example.gesport.database.AppDatabase
 import com.example.gesport.models.Booking
 import com.example.gesport.models.Court
 import com.example.gesport.models.Team
@@ -40,6 +47,10 @@ class GesBookingViewModel(
     private var _allTeams by mutableStateOf<List<Team>>(emptyList())
     val allTeams: List<Team> get() = _allTeams
 
+    // Usuario actualmente logueado (cargado desde la pantalla via loadCurrentUser)
+    private val _currentUser = MutableLiveData<User?>(null)
+    val currentUser: LiveData<User?> = _currentUser
+
     private val _currentBooking  = MutableLiveData<Booking?>(null)
     val currentBooking: LiveData<Booking?> = _currentBooking
 
@@ -54,6 +65,13 @@ class GesBookingViewModel(
         viewModelScope.launch { userRepository.getAllUsers().collect   { _allUsers  = it } }
         viewModelScope.launch { courtRepository.getAllCourts().collect { _allCourts = it } }
         viewModelScope.launch { teamRepository.getAllTeams().collect   { _allTeams  = it } }
+    }
+
+    // Carga el usuario logueado por su ID (llamado desde las pantallas con LaunchedEffect)
+    fun loadCurrentUser(userId: Int) {
+        viewModelScope.launch {
+            _currentUser.value = userRepository.getUserById(userId)
+        }
     }
 
     fun onShowCancelledChange(value: Boolean) {
